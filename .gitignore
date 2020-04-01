@@ -3,3 +3,5 @@
 *.ckpt-250000.*
 *.npy
 *.pb
+venv/
+.idea/
