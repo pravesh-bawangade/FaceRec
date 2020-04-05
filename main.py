@@ -28,44 +28,6 @@ import credentials as cr
 
 TIMEOUT = 10 #10 seconds
 
-def email_send(img):
-
-    img = rescale_frame(img, percent = 50)
-    path_image = 'G:/intruder_image'
-    cv2.imwrite(os.path.join(path_image, 'intruder.jpg'), img)
-    fromaddr = cr.FROMADDR  # Type your email address
-    toaddr = cr.TOADDR  # Type email address to whom you want to send
-    msg = MIMEMultipart()
-    msg['From'] = fromaddr
-    msg['To'] = toaddr
-    msg['Subject'] = "Intruder Detected"  # Type subject of your mail
-
-    body = "It is recommended to check surveillance feed."  # Type your message body
-    msg.attach(MIMEText(body, 'plain'))
-
-    filename = "intruder.jpg"
-    attachment = open("G:/intruder_image/intruder.jpg", "rb")
-
-    part = MIMEBase('application', 'octet-stream')
-    part.set_payload((attachment).read())
-    encoders.encode_base64(part)
-    part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
-
-    msg.attach(part)
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.starttls()
-    server.login(fromaddr, cr.PASSWORD)  # Type your email password
-    text = msg.as_string()
-    server.sendmail(fromaddr, toaddr, text)
-    server.quit()
-
-def rescale_frame(frame, percent=75):
-    width = int(frame.shape[1] * percent/ 100)
-    height = int(frame.shape[0] * percent/ 100)
-    dim = (width, height)
-    return cv2.resize(frame, dim, interpolation =cv2.INTER_AREA)
-
-
 def main(args):
     mode = args.mode
     if(mode == "camera"):
