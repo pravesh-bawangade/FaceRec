@@ -31,7 +31,7 @@ TIMEOUT = 10 #10 seconds
 def email_send(img):
 
     img = rescale_frame(img, percent = 50)
-    path_image = 'G:/intruder_image'
+    path_image = cr.PATH
     cv2.imwrite(os.path.join(path_image, 'intruder.jpg'), img)
     fromaddr = cr.FROMADDR  # Type your email address
     toaddr = cr.TOADDR  # Type email address to whom you want to send
@@ -44,7 +44,7 @@ def email_send(img):
     msg.attach(MIMEText(body, 'plain'))
 
     filename = "intruder.jpg"
-    attachment = open("G:/intruder_image/intruder.jpg", "rb")
+    attachment = open(cr.PATH + "/intruder.jpg", "rb")
 
     part = MIMEBase('application', 'octet-stream')
     part.set_payload((attachment).read())
