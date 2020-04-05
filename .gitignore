@@ -5,3 +5,5 @@
 *.pb
 venv/
 .idea/
+credentials.py
+*.DS_Store

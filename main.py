@@ -1,6 +1,4 @@
 '''
-Main program
-@Author: David Vu
 
 To execute simply run:
 main.py
@@ -9,6 +7,12 @@ To input new user:
 main.py --mode "input"
 
 '''
+import os
+import smtplib
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import cv2
 from align_custom import AlignCustom
@@ -20,8 +24,47 @@ import sys
 import json
 import time
 import numpy as np
+import credentials as cr
 
 TIMEOUT = 10 #10 seconds
+
+def email_send(img):
+
+    img = rescale_frame(img, percent = 50)
+    path_image = 'G:/intruder_image'
+    cv2.imwrite(os.path.join(path_image, 'intruder.jpg'), img)
+    fromaddr = cr.FROMADDR  # Type your email address
+    toaddr = cr.TOADDR  # Type email address to whom you want to send
+    msg = MIMEMultipart()
+    msg['From'] = fromaddr
+    msg['To'] = toaddr
+    msg['Subject'] = "Intruder Detected"  # Type subject of your mail
+
+    body = "It is recommended to check surveillance feed."  # Type your message body
+    msg.attach(MIMEText(body, 'plain'))
+
+    filename = "intruder.jpg"
+    attachment = open("G:/intruder_image/intruder.jpg", "rb")
+
+    part = MIMEBase('application', 'octet-stream')
+    part.set_payload((attachment).read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+
+    msg.attach(part)
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(fromaddr, cr.PASSWORD)  # Type your email password
+    text = msg.as_string()
+    server.sendmail(fromaddr, toaddr, text)
+    server.quit()
+
+def rescale_frame(frame, percent=75):
+    width = int(frame.shape[1] * percent/ 100)
+    height = int(frame.shape[0] * percent/ 100)
+    dim = (width, height)
+    return cv2.resize(frame, dim, interpolation =cv2.INTER_AREA)
+
 
 def main(args):
     mode = args.mode
@@ -61,7 +104,7 @@ def camera_recog():
                 print("Align face failed") #log        
         if(len(aligns) > 0):
             features_arr = extract_feature.get_features(aligns)
-            recog_data = findPeople(features_arr,positions)
+            recog_data = findPeople(features_arr,positions, frame)
             for (i,rect) in enumerate(rects):
                 cv2.rectangle(frame,(rect[0],rect[1]),(rect[2],rect[3]),(255,0,0)) #draw bounding box for the face
                 cv2.putText(frame,recog_data[i][0]+" - "+str(recog_data[i][1])+"%",(rect[0],rect[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),1,cv2.LINE_AA)
@@ -83,7 +126,7 @@ facerec_128D.txt Data Structure:
 This function basically does a simple linear search for 
 ^the 128D vector with the min distance to the 128D vector of the face on screen
 '''
-def findPeople(features_arr, positions, thres = 0.6, percent_thres = 70):
+def findPeople(features_arr, positions, frame, thres = 0.6, percent_thres = 70):
     '''
     :param features_arr: a list of 128d Features of all faces on screen
     :param positions: a list of face position types of all faces on screen
@@ -106,6 +149,7 @@ def findPeople(features_arr, positions, thres = 0.6, percent_thres = 70):
         percentage =  min(100, 100 * thres / smallest)
         if percentage <= percent_thres :
             result = "Unknown"
+            #email_send(frame)    # uncomment this line to enable email feature
         returnRes.append((result,percentage))
     return returnRes    
 
@@ -154,10 +198,10 @@ def create_manual_data():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, help="Run camera recognition", default="camera")
-    args = parser.parse_args(sys.argv[1:]);
-    FRGraph = FaceRecGraph();
-    MTCNNGraph = FaceRecGraph();
-    aligner = AlignCustom();
+    args = parser.parse_args(sys.argv[1:])
+    FRGraph = FaceRecGraph()
+    MTCNNGraph = FaceRecGraph()
+    aligner = AlignCustom()
     extract_feature = FaceFeature(FRGraph)
     face_detect = MTCNNDetect(MTCNNGraph, scale_factor=2); #scale_factor, rescales image for faster detection
-    main(args);
+    main(args)
